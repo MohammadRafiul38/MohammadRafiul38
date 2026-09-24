@@ -77,8 +77,8 @@ const from = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
 const profileQuery = `
 query($login: String!, $from: DateTime!, $to: DateTime!, $after: String) {
   user(login: $login) {
+    createdAt
     followers { totalCount }
-    contributionYears
     repositories(
       first: 100,
       after: $after,
@@ -154,7 +154,11 @@ const contributions = user.contributionsCollection;
 
 // GitHub's profile contribution totals are time-window based.
 // Sum the yearly contribution totals to get a genuine all-time commit count.
-const years = [...new Set([...(user.contributionYears || []), now.getUTCFullYear()])].sort((a, b) => a - b);
+const accountYear = new Date(user.createdAt).getUTCFullYear();
+const years = Array.from(
+  { length: now.getUTCFullYear() - accountYear + 1 },
+  (_, index) => accountYear + index
+);
 let allTimeCommits = 0;
 let allTimePullRequests = 0;
 let allTimeIssues = 0;
