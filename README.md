@@ -2,20 +2,15 @@
 
 | ![Panchiko typography](./assets/deathmetal-text.png) | **Mohammad Rafiul Chowdhury**<br><br>**Frontend Developer · Game Graphics Enthusiast**<br><br>I craft clean, optimized and interactive interfaces, and design visuals that bring games and applications to life.<br><br>[GitHub](https://github.com/MohammadRafiul38) · [Email](mailto:mrafiulchowdhury@gmail.com) |
 | :---: | :--- |
-| | **Frontend Developer · Game Graphics Enthusiast** |
-| | I craft clean, optimized and interactive interfaces, and design visuals that bring games and applications to life. |
-| | [GitHub](https://github.com/MohammadRafiul38) · [Email](mailto:mrafiulchowdhury@gmail.com) |
 
----
+### GitHub
 
-## GitHub
+[![GitHub Statistics](./assets/stats.svg)](https://github.com/MohammadRafiul38)[![Top Languages](./assets/languages.svg)](https://github.com/MohammadRafiul38)
 
-| **GitHub Statistics** | **Top Languages** |
-| :---: | :---: |
-| ![GitHub Statistics](./assets/stats.svg) | ![Top Languages](./assets/languages.svg) |
+### Activity
 
----
+[![GitHub Contribution Activity](./assets/activity.svg)](https://github.com/MohammadRafiul38)
 
-## Activity
+### Contact
 
-![GitHub Contribution Activity](./assets/activity.svg)
+[![GitHub](./assets/github.svg)](https://github.com/MohammadRafiul38) [![Email](./assets/email.svg)](mailto:mrafiulchowdhury@gmail.com)
