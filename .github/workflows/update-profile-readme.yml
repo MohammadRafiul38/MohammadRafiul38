@@ -1,6 +1,9 @@
 name: Refresh profile stats
 
 on:
+  push:
+    paths-ignore:
+      - 'assets/**'
   schedule:
     - cron: '17 3 * * 1'
   workflow_dispatch:
@@ -30,6 +33,6 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add assets/stats.svg assets/languages.svg assets/activity.svg
+          git add assets/overview.svg assets/activity.svg assets/stats.svg assets/languages.svg
           git diff --cached --quiet || git commit -m 'chore: refresh profile stats [skip ci]'
           git push

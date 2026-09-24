@@ -7,7 +7,7 @@
 
 ### GitHub
 
-![GitHub Statistics](./assets/stats.svg) ![Top Languages](./assets/languages.svg)
+![GitHub Statistics and Top Languages](./assets/overview.svg)
 
 ### Activity
 

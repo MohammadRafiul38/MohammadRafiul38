@@ -347,7 +347,8 @@ ${languagesRows.map(({ language, percent, color }, index) => {
 }).join('')}
 </svg>`;
 
+await fs.writeFile(path.join(OUT, 'overview.svg'), overviewSvg);
+await fs.writeFile(path.join(OUT, 'activity.svg'), activitySvg);
 await fs.writeFile(path.join(OUT, 'stats.svg'), statsSvg);
 await fs.writeFile(path.join(OUT, 'languages.svg'), languagesSvg);
-await fs.writeFile(path.join(OUT, 'activity.svg'), activitySvg);
 console.log(`Generated live profile cards for ${OWNER}: ${publicRepos} repositories, ${stars} stars, ${contributions.contributionCalendar.totalContributions} contributions.`);
