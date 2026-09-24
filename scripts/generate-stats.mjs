@@ -225,19 +225,19 @@ const commonStats = [
 ];
 
 const statsSvg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 270" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="470" height="250" viewBox="0 0 470 250" role="img" aria-labelledby="title desc">
 <title id="title">GitHub statistics for ${esc(OWNER)}</title>
 <desc id="desc">All-time public repository, star, commit, and follower statistics generated from GitHub.</desc>
-<rect x="1" y="1" width="518" height="268" rx="18" fill="${C.panel}" stroke="${C.border}"/>
-${text(26, 36, 'GitHub Statistics', 17, C.text, 700)}
-${text(26, 58, 'LIVE DATA · ALL TIME', 10, C.muted, 600)}
-<line x1="26" y1="78" x2="494" y2="78" stroke="${C.border}"/>
+<rect x="1" y="1" width="468" height="248" rx="18" fill="${C.panel}" stroke="${C.border}"/>
+${text(24, 32, 'GitHub Statistics', 16, C.text, 700)}
+${text(24, 52, 'LIVE DATA · ALL TIME', 9, C.muted, 600)}
+<line x1="26" y1="78" x2="444" y2="72" stroke="${C.border}"/>
 ${commonStats.map(([label, value, color], index) => {
-  const positions = [[26, 118], [275, 118], [26, 190], [275, 190]][index];
+  const positions = [[24, 110], [245, 110], [24, 170], [245, 170]][index];
   const [x, y] = positions;
-  return `${text(x, y, label, 10, color, 700)}${text(x, y + 28, value, 27, C.text, 700)}`;
+  return `${text(x, y, label, 10, color, 700)}${text(x, y + 25, value, 25, C.text, 700)}`;
 }).join('')}
-${text(26, 248, `${fmt(allTimePullRequests)} pull requests · ${fmt(allTimeIssues)} issues`, 10, C.muted, 400)}
+${text(24, 232, `${fmt(allTimePullRequests)} pull requests · ${fmt(allTimeIssues)} issues`, 9, C.muted, 400)}
 </svg>`;
 
 const languagesRows = topLanguages.length
@@ -253,17 +253,17 @@ const languagesRows = topLanguages.length
   : [{ language: 'No language data yet', percent: 0, color: C.muted }];
 
 const languagesSvg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 270" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="470" height="250" viewBox="0 0 470 250" role="img" aria-labelledby="title desc">
 <title id="title">Top languages for ${esc(OWNER)}</title>
 <desc id="desc">Top languages calculated from language byte totals across public repositories.</desc>
-<rect x="1" y="1" width="518" height="268" rx="18" fill="${C.panel}" stroke="${C.border}"/>
-${text(26, 36, 'Top Languages', 17, C.text, 700)}
-${text(26, 58, 'PUBLIC REPOSITORIES · BYTES', 10, C.muted, 600)}
-<line x1="26" y1="78" x2="494" y2="78" stroke="${C.border}"/>
+<rect x="1" y="1" width="468" height="248" rx="18" fill="${C.panel}" stroke="${C.border}"/>
+${text(24, 32, 'Top Languages', 16, C.text, 700)}
+${text(24, 52, 'PUBLIC REPOSITORIES · BYTES', 9, C.muted, 600)}
+<line x1="26" y1="78" x2="444" y2="72" stroke="${C.border}"/>
 ${languagesRows.map(({ language, percent, color }, index) => {
-  const y = 104 + index * 25;
-  const width = Math.max(0, Math.min(430, percent * 4.3));
-  return `${text(26, y, language, 11, C.text, 600)}${text(150, y, `${percent.toFixed(1)}%`, 10, C.muted, 500)}<rect x="202" y="${y - 9}" width="292" height="7" rx="3.5" fill="${C.track}"/><rect x="202" y="${y - 9}" width="${Math.max(3, width * 0.678)}" height="7" rx="3.5" fill="${color}"/>`;
+  const y = 92 + index * 24;
+  const width = Math.max(0, Math.min(400, percent * 4.0));
+  return `${text(24, y, language, 10, C.text, 600)}${text(130, y, `${percent.toFixed(1)}%`, 9, C.muted, 500)}<rect x="174" y="${y - 8}" width="270" height="7" rx="3.5" fill="${C.track}"/><rect x="174" y="${y - 8}" width="${Math.max(3, width * 0.675)}" height="7" rx="3.5" fill="${color}"/>`;
 }).join('')}
 </svg>`;
 
@@ -304,7 +304,7 @@ weeks.forEach((week, wi) => {
 });
 
 const activitySvg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 205" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="218" viewBox="0 0 920 205" role="img" aria-labelledby="title desc">
 <title id="title">GitHub contribution activity for ${esc(OWNER)}</title>
 <desc id="desc">Real contribution calendar data from GitHub for the last 12 months.</desc>
 <rect x="1" y="1" width="918" height="203" rx="18" fill="${C.panel}" stroke="${C.border}"/>
@@ -318,6 +318,33 @@ ${cells}
 ${text(748, 194, 'Less', 9, C.muted, 500)}
 ${Object.values(levelColor).map((color, i) => `<rect x="778" y="185" width="10" height="10" rx="2" fill="${color}"/>`).join('')}
 ${text(898, 194, 'More', 9, C.muted, 500, 'end')}
+</svg>`;
+
+
+const overviewSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 310" role="img" aria-labelledby="title desc">
+<title id="title">GitHub overview for ${esc(OWNER)}</title>
+<desc id="desc">Live GitHub statistics and top programming languages for ${esc(OWNER)}.</desc>
+<rect x="1" y="1" width="1118" height="308" rx="22" fill="${C.bg}" stroke="${C.border}"/>
+<rect x="18" y="18" width="542" height="274" rx="18" fill="${C.panel}" stroke="${C.border}"/>
+<rect x="578" y="18" width="524" height="274" rx="18" fill="${C.panel}" stroke="${C.border}"/>
+${text(42, 54, 'GitHub Statistics', 18, C.text, 700)}
+${text(42, 76, 'LIVE DATA · ALL TIME', 10, C.muted, 600)}
+<line x1="42" y1="96" x2="536" y2="96" stroke="${C.border}"/>
+${commonStats.map(([label, value, color], index) => {
+  const positions = [[42, 140], [292, 140], [42, 212], [292, 212]][index];
+  const [x, y] = positions;
+  return `${text(x, y, label, 10, color, 700)}${text(x, y + 28, value, 29, C.text, 700)}`;
+}).join('')}
+${text(42, 270, `${fmt(allTimePullRequests)} pull requests · ${fmt(allTimeIssues)} issues`, 10, C.muted, 400)}
+${text(602, 54, 'Top Languages', 18, C.text, 700)}
+${text(602, 76, 'PUBLIC REPOSITORIES · BYTES', 10, C.muted, 600)}
+<line x1="602" y1="96" x2="1076" y2="96" stroke="${C.border}"/>
+${languagesRows.map(({ language, percent, color }, index) => {
+  const y = 122 + index * 25;
+  const width = Math.max(3, Math.min(292, percent * 2.92));
+  return `${text(602, y, language, 11, C.text, 600)}${text(714, y, `${percent.toFixed(1)}%`, 10, C.muted, 500)}<rect x="786" y="${y - 9}" width="290" height="7" rx="3.5" fill="${C.track}"/><rect x="786" y="${y - 9}" width="${width}" height="7" rx="3.5" fill="${color}"/>`;
+}).join('')}
 </svg>`;
 
 await fs.writeFile(path.join(OUT, 'stats.svg'), statsSvg);
