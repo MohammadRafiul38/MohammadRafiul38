@@ -74,10 +74,11 @@ async function gql(query, variables) {
 const now = new Date();
 const from = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
 
-const query = `
+const profileQuery = `
 query($login: String!, $from: DateTime!, $to: DateTime!, $after: String) {
   user(login: $login) {
     followers { totalCount }
+    contributionYears
     repositories(
       first: 100,
       after: $after,
@@ -118,12 +119,23 @@ query($login: String!, $from: DateTime!, $to: DateTime!, $after: String) {
   }
 }`;
 
+const yearCommitQuery = `
+query($login: String!, $from: DateTime!, $to: DateTime!) {
+  user(login: $login) {
+    contributionsCollection(from: $from, to: $to) {
+      totalCommitContributions
+      totalPullRequestContributions
+      totalIssueContributions
+    }
+  }
+}`;
+
 const repositories = [];
 let after = null;
 let firstPage;
 
 while (true) {
-  firstPage = await gql(query, {
+  firstPage = await gql(profileQuery, {
     login: OWNER,
     from: from.toISOString(),
     to: now.toISOString(),
@@ -139,6 +151,30 @@ while (true) {
 
 const user = firstPage.user;
 const contributions = user.contributionsCollection;
+
+// GitHub's profile contribution totals are time-window based.
+// Sum the yearly contribution totals to get a genuine all-time commit count.
+const years = [...new Set([...(user.contributionYears || []), now.getUTCFullYear()])].sort((a, b) => a - b);
+let allTimeCommits = 0;
+let allTimePullRequests = 0;
+let allTimeIssues = 0;
+
+for (const year of years) {
+  const yearStart = new Date(Date.UTC(year, 0, 1, 0, 0, 0));
+  const yearEnd = new Date(Date.UTC(year + 1, 0, 1, 0, 0, 0));
+  const effectiveEnd = yearEnd > now ? now : yearEnd;
+
+  const yearData = await gql(yearCommitQuery, {
+    login: OWNER,
+    from: yearStart.toISOString(),
+    to: effectiveEnd.toISOString()
+  });
+
+  const yearContributions = yearData.user.contributionsCollection;
+  allTimeCommits += yearContributions.totalCommitContributions;
+  allTimePullRequests += yearContributions.totalPullRequestContributions;
+  allTimeIssues += yearContributions.totalIssueContributions;
+}
 const publicRepos = repositories.length;
 const stars = repositories.reduce((sum, repo) => sum + repo.stargazerCount, 0);
 
@@ -180,28 +216,24 @@ const commonLanguageColors = {
 const commonStats = [
   ['PUBLIC REPOS', compact(publicRepos), C.blue],
   ['STARS', compact(stars), C.purple],
-  ['COMMITS', compact(contributions.totalCommitContributions), C.pink],
+  ['COMMITS · ALL TIME', compact(allTimeCommits), C.pink],
   ['FOLLOWERS', compact(user.followers.totalCount), C.red]
 ];
 
 const statsSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 270" role="img" aria-labelledby="title desc">
 <title id="title">GitHub statistics for ${esc(OWNER)}</title>
-<desc id="desc">Public repository, star, commit, follower and contribution counts generated from GitHub.</desc>
+<desc id="desc">All-time public repository, star, commit, and follower statistics generated from GitHub.</desc>
 <rect x="1" y="1" width="518" height="268" rx="18" fill="${C.panel}" stroke="${C.border}"/>
 ${text(26, 36, 'GitHub Statistics', 17, C.text, 700)}
-${text(26, 58, 'LIVE DATA · LAST 12 MONTHS', 10, C.muted, 600)}
+${text(26, 58, 'LIVE DATA · ALL TIME', 10, C.muted, 600)}
 <line x1="26" y1="78" x2="494" y2="78" stroke="${C.border}"/>
 ${commonStats.map(([label, value, color], index) => {
-  const positions = [[26, 118], [275, 118], [26, 185], [275, 185]][index];
+  const positions = [[26, 118], [275, 118], [26, 190], [275, 190]][index];
   const [x, y] = positions;
-  return `${text(x, y, label, 10, color, 700)}${text(x, y + 27, value, 26, C.text, 700)}`;
+  return `${text(x, y, label, 10, color, 700)}${text(x, y + 28, value, 27, C.text, 700)}`;
 }).join('')}
-<circle cx="436" cy="151" r="54" fill="none" stroke="${C.track}" stroke-width="10"/>
-<circle cx="436" cy="151" r="54" fill="none" stroke="${C.blue}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${Math.min(339, Math.max(16, contributions.contributionCalendar.totalContributions * 2))} 400" transform="rotate(-90 436 151)"/>
-${text(436, 147, compact(contributions.contributionCalendar.totalContributions), 18, C.text, 700, 'middle')}
-${text(436, 166, 'CONTRIBUTIONS', 9, C.muted, 600, 'middle')}
-${text(26, 248, `${fmt(contributions.totalPullRequestContributions)} pull requests · ${fmt(contributions.totalIssueContributions)} issues`, 10, C.muted, 400)}
+${text(26, 248, `${fmt(allTimePullRequests)} pull requests · ${fmt(allTimeIssues)} issues`, 10, C.muted, 400)}
 </svg>`;
 
 const languagesRows = topLanguages.length

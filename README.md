@@ -5,11 +5,12 @@
 
 ### GitHub
 
-[![GitHub Statistics](./assets/stats.svg)](https://github.com/MohammadRafiul38)[![Top Languages](./assets/languages.svg)](https://github.com/MohammadRafiul38)
+| ![GitHub Statistics](./assets/stats.svg) | ![Top Languages](./assets/languages.svg) |
+| :---: | :---: |
 
 ### Activity
 
-[![GitHub Contribution Activity](./assets/activity.svg)](https://github.com/MohammadRafiul38)
+![GitHub Contribution Activity](./assets/activity.svg)
 
 ### Contact
 
