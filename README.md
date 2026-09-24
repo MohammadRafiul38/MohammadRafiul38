@@ -7,7 +7,11 @@
 
 ### GitHub
 
+<<<<<<< HEAD
 ![GitHub Statistics and Top Languages](./assets/overview.svg)
+=======
+![GitHub overview](./assets/overview.svg)
+>>>>>>> b75a033 (Improve stats layout)
 
 ### Activity
 

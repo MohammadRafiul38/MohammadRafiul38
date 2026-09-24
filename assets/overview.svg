@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <svg xmlns="http://www.w3.org/2000/svg" width="1120" height="310" viewBox="0 0 1120 310">
 <rect x="1" y="1" width="1118" height="308" rx="22" fill="#0d1117" stroke="#242c37"/>
 <rect x="18" y="18" width="542" height="274" rx="18" fill="#11161d" stroke="#242c37"/>
@@ -20,4 +21,17 @@
 <line x1="602" y1="96" x2="1076" y2="96" stroke="#242c37"/>
 <text x="602" y="140" fill="#8b949e" font-size="12">Live data will appear after the first sync.</text>
 </g>
+=======
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 310" role="img" aria-labelledby="title">
+<title id="title">GitHub overview awaiting live sync</title>
+<rect x="1" y="1" width="1118" height="308" rx="22" fill="#0d1117" stroke="#242c37"/>
+<rect x="18" y="18" width="542" height="274" rx="18" fill="#11161d" stroke="#242c37"/>
+<rect x="578" y="18" width="524" height="274" rx="18" fill="#11161d" stroke="#242c37"/>
+<text x="42" y="58" fill="#e6edf3" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="18" font-weight="700">GitHub Statistics</text>
+<text x="42" y="82" fill="#8b949e" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="10" font-weight="600">SYNCING LIVE DATA…</text>
+<text x="602" y="58" fill="#e6edf3" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="18" font-weight="700">Top Languages</text>
+<text x="602" y="82" fill="#8b949e" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="10" font-weight="600">SYNCING LIVE DATA…</text>
+<text x="280" y="162" text-anchor="middle" fill="#7aa2f7" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" font-weight="600">Run “Refresh profile stats”</text>
+<text x="840" y="162" text-anchor="middle" fill="#b388ff" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13" font-weight="600">Run “Refresh profile stats”</text>
+>>>>>>> b75a033 (Improve stats layout)
 </svg>
