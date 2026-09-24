@@ -5,7 +5,9 @@
 
 ### GitHub
 
-[![GitHub Statistics](./assets/stats.svg)](https://github.com/MohammadRafiul38)[![Top Languages](./assets/languages.svg)](https://github.com/MohammadRafiul38)   ### Activity
+[![GitHub Statistics](./assets/stats.svg)](https://github.com/MohammadRafiul38)[![Top Languages](./assets/languages.svg)](https://github.com/MohammadRafiul38)   
+
+### Activity
 
 [![GitHub Contribution Activity](./assets/activity.svg)](https://github.com/MohammadRafiul38)
 
