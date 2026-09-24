@@ -1,21 +1,17 @@
-![Profile Views](https://komarev.com/ghpvc/?username=MohammadRafiul38&style=flat-square&color=8b5cf6&label=PROFILE%20VIEWS)
+﻿![Profile Views](https://komarev.com/ghpvc/?username=MohammadRafiul38&style=flat-square&color=8b5cf6&label=PROFILE%20VIEWS)
 
-| ![Panchiko typography](./assets/deathmetal-text.png) | **Mohammad Rafiul Chowdhury**<br><br>**Frontend Developer · Game Graphics Enthusiast**<br><br>I craft clean, optimized and interactive interfaces, and design visuals that bring games and applications to life.<br><br>[GitHub](https://github.com/MohammadRafiul38) · [Email](mailto:mrafiulchowdhury@gmail.com) |
+| ![Panchiko typography](./assets/deathmetal-text.png) | **Mohammad Rafiul Chowdhury**<br><br>**Frontend Developer Â· Game Graphics Enthusiast**<br><br>I craft clean, optimized and interactive interfaces, and design visuals that bring games and applications to life.<br><br>[GitHub](https://github.com/MohammadRafiul38) Â· [Email](mailto:mrafiulchowdhury@gmail.com) |
 | :---: | :--- |
 
 ---
 
 ### GitHub
 
-<<<<<<< HEAD
-![GitHub Statistics and Top Languages](./assets/overview.svg)
-=======
-![GitHub overview](./assets/overview.svg)
->>>>>>> b75a033 (Improve stats layout)
+![GitHub Statistics and Top Languages](./assets/overview.png)
 
 ### Activity
 
-![GitHub Contribution Activity](./assets/activity.svg)
+![GitHub Contribution Activity](./assets/activity.png)
 
 ### Contact
 
