@@ -1,146 +1,290 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-const OWNER = 'MohammadRafiul38';
-const OUT = path.resolve('assets');
+const OWNER = process.env.GITHUB_OWNER || 'MohammadRafiul38';
 const TOKEN = process.env.GITHUB_TOKEN;
+const OUT = path.resolve('assets');
 
 if (!TOKEN) throw new Error('GITHUB_TOKEN is required');
 
-const colors = {
+const C = {
   bg: '#0d1117',
-  card: '#0d1117',
-  border: '#263246',
-  text: '#c9d1d9',
-  muted: '#7f8ea3',
+  panel: '#11161d',
+  border: '#242c37',
+  text: '#e6edf3',
+  muted: '#8b949e',
   blue: '#7aa2f7',
+  purple: '#b388ff',
   pink: '#ff7ab2',
-  purple: '#c05acb',
-  track: '#161f2d'
+  red: '#ef6a8a',
+  track: '#1a222c',
+  grid0: '#161b22',
+  grid1: '#30233b',
+  grid2: '#5b3d70',
+  grid3: '#8d5cab',
+  grid4: '#c38bdc'
 };
 
-const langColors = {
-  JavaScript: '#f1e05a', TypeScript: '#3178c6', HTML: '#e34c26', CSS: '#563d7c',
-  Python: '#3572A5', React: '#61dafb', Kotlin: '#A97BFF', Java: '#b07219', C: '#555555',
-  'C++': '#f34b7d', 'C#': '#178600', Go: '#00ADD8', Rust: '#dea584', PHP: '#4F5D95',
-  Shell: '#89e051', Dart: '#00B4AB', Ruby: '#701516', Swift: '#F05138', Vue: '#41b883'
-};
+const FALLBACK_LANG_COLORS = ['#7aa2f7', '#b388ff', '#ff7ab2', '#ef6a8a', '#6fd6ff', '#9be37a'];
 
-function esc(s) {
-  return String(s).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+function esc(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
 }
-function fmt(n) {
-  return Intl.NumberFormat('en', { notation: n >= 1000 ? 'compact' : 'standard', maximumFractionDigits: 1 }).format(n);
+
+function fmt(value) {
+  return new Intl.NumberFormat('en-US').format(Number(value) || 0);
 }
+
+function compact(value) {
+  const n = Number(value) || 0;
+  if (n < 1000) return String(n);
+  if (n < 1_000_000) return `${(n / 1000).toFixed(n >= 10_000 ? 0 : 1)}k`;
+  return `${(n / 1_000_000).toFixed(1)}m`;
+}
+
+function text(x, y, value, size, fill = C.text, weight = 400, anchor = 'start') {
+  return `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="${fill}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="${size}" font-weight="${weight}">${esc(value)}</text>`;
+}
+
 async function gql(query, variables) {
-  const r = await fetch('https://api.github.com/graphql', {
+  const response = await fetch('https://api.github.com/graphql', {
     method: 'POST',
-    headers: { authorization: `bearer ${TOKEN}`, 'content-type': 'application/json', 'user-agent': 'MohammadRafiul38-profile-readme' },
+    headers: {
+      Authorization: `bearer ${TOKEN}`,
+      'Content-Type': 'application/json',
+      'User-Agent': 'MohammadRafiul38-profile-readme'
+    },
     body: JSON.stringify({ query, variables })
   });
-  if (!r.ok) throw new Error(`GitHub GraphQL HTTP ${r.status}`);
-  const data = await r.json();
-  if (data.errors?.length) throw new Error(data.errors.map(e => e.message).join('; '));
-  return data.data;
+
+  const body = await response.json();
+  if (!response.ok) {
+    throw new Error(`GitHub GraphQL HTTP ${response.status}: ${body?.message || 'request failed'}`);
+  }
+  if (body.errors?.length) {
+    throw new Error(body.errors.map(error => error.message).join('; '));
+  }
+  return body.data;
 }
 
 const now = new Date();
 const from = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-const query = `query($login:String!, $from:DateTime!, $to:DateTime!) {
-  user(login:$login) {
-    repositories(first:100, ownerAffiliations:OWNER, privacy:PUBLIC) {
-      totalCount
-      nodes { name isFork isArchived stargazerCount forkCount }
-    }
+
+const query = `
+query($login: String!, $from: DateTime!, $to: DateTime!, $after: String) {
+  user(login: $login) {
     followers { totalCount }
-    following { totalCount }
-    contributionsCollection(from:$from, to:$to) {
+    repositories(
+      first: 100,
+      after: $after,
+      ownerAffiliations: OWNER,
+      privacy: PUBLIC,
+      isFork: false
+    ) {
+      totalCount
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        name
+        stargazerCount
+        isArchived
+        languages(first: 10, orderBy: { field: SIZE, direction: DESC }) {
+          edges {
+            size
+            node { name color }
+          }
+        }
+      }
+    }
+    contributionsCollection(from: $from, to: $to) {
       totalCommitContributions
       totalPullRequestContributions
       totalIssueContributions
       totalRepositoriesWithContributedCommits
       contributionCalendar {
         totalContributions
-        weeks { contributionDays { date contributionCount contributionLevel } }
+        weeks {
+          contributionDays {
+            date
+            contributionCount
+            contributionLevel
+          }
+        }
       }
     }
   }
 }`;
 
-const data = await gql(query, { login: OWNER, from: from.toISOString(), to: now.toISOString() });
-const user = data.user;
-const repos = user.repositories.nodes.filter(r => !r.isFork);
-const stars = repos.reduce((a,r) => a + r.stargazerCount, 0);
-const c = user.contributionsCollection;
+const repositories = [];
+let after = null;
+let firstPage;
 
-// Language byte totals across owned non-fork repositories.
-const languageTotals = {};
-for (const repo of repos) {
-  try {
-    const r = await fetch(`https://api.github.com/repos/${OWNER}/${encodeURIComponent(repo.name)}/languages`, {
-      headers: { authorization: `bearer ${TOKEN}`, accept: 'application/vnd.github+json', 'user-agent': 'MohammadRafiul38-profile-readme' }
-    });
-    if (!r.ok) continue;
-    const langs = await r.json();
-    for (const [lang, bytes] of Object.entries(langs)) languageTotals[lang] = (languageTotals[lang] ?? 0) + bytes;
-  } catch {}
+while (true) {
+  firstPage = await gql(query, {
+    login: OWNER,
+    from: from.toISOString(),
+    to: now.toISOString(),
+    after
+  });
+
+  const connection = firstPage.user.repositories;
+  repositories.push(...connection.nodes.filter(Boolean));
+
+  if (!connection.pageInfo.hasNextPage) break;
+  after = connection.pageInfo.endCursor;
 }
 
-const topLangs = Object.entries(languageTotals)
-  .sort((a,b) => b[1] - a[1])
+const user = firstPage.user;
+const contributions = user.contributionsCollection;
+const publicRepos = repositories.length;
+const stars = repositories.reduce((sum, repo) => sum + repo.stargazerCount, 0);
+
+const languageTotals = new Map();
+for (const repo of repositories) {
+  for (const edge of repo.languages?.edges || []) {
+    const name = edge.node.name;
+    languageTotals.set(name, (languageTotals.get(name) || 0) + edge.size);
+  }
+}
+
+const topLanguages = [...languageTotals.entries()]
+  .sort((a, b) => b[1] - a[1])
   .slice(0, 6);
-const totalLangBytes = topLangs.reduce((a,[,b]) => a+b, 0) || 1;
 
-const statsSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" role="img">
-<rect x="1" y="1" width="758" height="298" rx="16" fill="${colors.card}" stroke="${colors.border}"/>
-<text x="28" y="42" fill="${colors.text}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="18" font-weight="700">GitHub Statistics</text>
-<text x="28" y="70" fill="${colors.muted}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12">Last 12 months · generated from GitHub</text>
-<line x1="28" y1="89" x2="500" y2="89" stroke="#202b3b"/>
-${[['REPOSITORIES',repos.length,28,124],['STARS',stars,28,202],['COMMITS',c.totalCommitContributions,280,124],['PULL REQUESTS',c.totalPullRequestContributions,280,202]].map(([label,value,x,y]) => `<text x="${x}" y="${y}" fill="${label==='COMMITS'||label==='PULL REQUESTS'?colors.pink:colors.blue}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14">${label}</text><text x="${x}" y="${y+34}" fill="${colors.text}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="24" font-weight="700">${esc(fmt(value))}</text>`).join('')}
-<circle cx="640" cy="153" r="70" fill="none" stroke="#172131" stroke-width="12"/>
-<circle cx="640" cy="153" r="70" fill="none" stroke="${colors.blue}" stroke-width="12" stroke-dasharray="185 255" transform="rotate(-90 640 153)"/>
-<circle cx="640" cy="153" r="70" fill="none" stroke="${colors.pink}" stroke-width="12" stroke-dasharray="78 362" transform="rotate(30 640 153)"/>
-<text x="640" y="149" text-anchor="middle" fill="${colors.text}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="24" font-weight="700">${esc(fmt(c.contributionCalendar.totalContributions))}</text>
-<text x="640" y="173" text-anchor="middle" fill="${colors.muted}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11">CONTRIBUTIONS</text>
+const langTotal = topLanguages.reduce((sum, [, size]) => sum + size, 0) || 1;
+
+const commonLanguageColors = {
+  JavaScript: '#f1e05a',
+  TypeScript: '#3178c6',
+  HTML: '#e34c26',
+  CSS: '#563d7c',
+  Python: '#3572A5',
+  Java: '#b07219',
+  C: '#555555',
+  'C++': '#f34b7d',
+  'C#': '#178600',
+  Go: '#00ADD8',
+  Rust: '#dea584',
+  PHP: '#4F5D95',
+  Shell: '#89e051',
+  Dart: '#00B4AB',
+  Ruby: '#701516',
+  Swift: '#F05138',
+  Kotlin: '#A97BFF',
+  Vue: '#41b883'
+};
+
+const commonStats = [
+  ['PUBLIC REPOS', compact(publicRepos), C.blue],
+  ['STARS', compact(stars), C.purple],
+  ['COMMITS', compact(contributions.totalCommitContributions), C.pink],
+  ['FOLLOWERS', compact(user.followers.totalCount), C.red]
+];
+
+const statsSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 270" role="img" aria-labelledby="title desc">
+<title id="title">GitHub statistics for ${esc(OWNER)}</title>
+<desc id="desc">Public repository, star, commit, follower and contribution counts generated from GitHub.</desc>
+<rect x="1" y="1" width="518" height="268" rx="18" fill="${C.panel}" stroke="${C.border}"/>
+${text(26, 36, 'GitHub Statistics', 17, C.text, 700)}
+${text(26, 58, 'LIVE DATA · LAST 12 MONTHS', 10, C.muted, 600)}
+<line x1="26" y1="78" x2="494" y2="78" stroke="${C.border}"/>
+${commonStats.map(([label, value, color], index) => {
+  const positions = [[26, 118], [275, 118], [26, 185], [275, 185]][index];
+  const [x, y] = positions;
+  return `${text(x, y, label, 10, color, 700)}${text(x, y + 27, value, 26, C.text, 700)}`;
+}).join('')}
+<circle cx="436" cy="151" r="54" fill="none" stroke="${C.track}" stroke-width="10"/>
+<circle cx="436" cy="151" r="54" fill="none" stroke="${C.blue}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${Math.min(339, Math.max(16, contributions.contributionCalendar.totalContributions * 2))} 400" transform="rotate(-90 436 151)"/>
+${text(436, 147, compact(contributions.contributionCalendar.totalContributions), 18, C.text, 700, 'middle')}
+${text(436, 166, 'CONTRIBUTIONS', 9, C.muted, 600, 'middle')}
+${text(26, 248, `${fmt(contributions.totalPullRequestContributions)} pull requests · ${fmt(contributions.totalIssueContributions)} issues`, 10, C.muted, 400)}
 </svg>`;
 
-let y = 126;
-const rows = topLangs.map(([lang,bytes],i) => {
-  const pct = (bytes / totalLangBytes) * 100;
-  const width = Math.max(8, pct * 4.9);
-  const color = langColors[lang] ?? ['#7aa2f7','#c05acb','#ff7ab2','#56e39f'][i % 4];
-  const row = `<circle cx="30" cy="${y-5}" r="5" fill="${color}"/><text x="46" y="${y}" fill="${colors.text}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="14">${esc(lang)}</text><text x="180" y="${y}" fill="${colors.muted}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="13">${pct.toFixed(1)}%</text><rect x="250" y="${y-12}" width="470" height="9" rx="4.5" fill="${colors.track}"/><rect x="250" y="${y-12}" width="${Math.min(470,width*4.4)}" height="9" rx="4.5" fill="${color}"/>`;
-  y += 38;
-  return row;
-}).join('');
-const languagesSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" role="img">
-<rect x="1" y="1" width="758" height="298" rx="16" fill="${colors.card}" stroke="${colors.border}"/>
-<text x="28" y="42" fill="${colors.text}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="18" font-weight="700">Top Languages</text>
-<text x="28" y="70" fill="${colors.muted}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12">Repository language bytes</text>
-<line x1="28" y1="89" x2="732" y2="89" stroke="#202b3b"/>
-${rows}
+const languagesRows = topLanguages.length
+  ? topLanguages.map(([language, bytes], index) => {
+      const percent = (bytes / langTotal) * 100;
+      const color = commonLanguageColors[language] || FALLBACK_LANG_COLORS[index % FALLBACK_LANG_COLORS.length];
+      return {
+        language,
+        percent,
+        color
+      };
+    })
+  : [{ language: 'No language data yet', percent: 0, color: C.muted }];
+
+const languagesSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 270" role="img" aria-labelledby="title desc">
+<title id="title">Top languages for ${esc(OWNER)}</title>
+<desc id="desc">Top languages calculated from language byte totals across public repositories.</desc>
+<rect x="1" y="1" width="518" height="268" rx="18" fill="${C.panel}" stroke="${C.border}"/>
+${text(26, 36, 'Top Languages', 17, C.text, 700)}
+${text(26, 58, 'PUBLIC REPOSITORIES · BYTES', 10, C.muted, 600)}
+<line x1="26" y1="78" x2="494" y2="78" stroke="${C.border}"/>
+${languagesRows.map(({ language, percent, color }, index) => {
+  const y = 104 + index * 25;
+  const width = Math.max(0, Math.min(430, percent * 4.3));
+  return `${text(26, y, language, 11, C.text, 600)}${text(150, y, `${percent.toFixed(1)}%`, 10, C.muted, 500)}<rect x="202" y="${y - 9}" width="292" height="7" rx="3.5" fill="${C.track}"/><rect x="202" y="${y - 9}" width="${Math.max(3, width * 0.678)}" height="7" rx="3.5" fill="${color}"/>`;
+}).join('')}
 </svg>`;
 
-const weeks = c.contributionCalendar.weeks.slice(-53);
-const levelFill = { NONE:'#161f2d', FIRST_QUARTILE:'#14342f', SECOND_QUARTILE:'#1b644d', THIRD_QUARTILE:'#2aa56e', FOURTH_QUARTILE:'#56e39f' };
-const cell=11, gap=3, x0=118, y0=80;
-let rects='';
-weeks.forEach((week, wi) => week.contributionDays.forEach((day, di) => {
-  const x = x0 + wi*(cell+gap), yy = y0 + di*(cell+gap);
-  rects += `<rect x="${x}" y="${yy}" width="${cell}" height="${cell}" rx="2" fill="${levelFill[day.contributionLevel] ?? levelFill.NONE}"/>`;
-}));
-const activitySvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 240" role="img">
-<rect x="1" y="1" width="1398" height="238" rx="16" fill="${colors.card}" stroke="${colors.border}"/>
-<text x="28" y="42" fill="${colors.text}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="18" font-weight="700">GitHub Contribution Activity</text>
-<text x="1368" y="42" text-anchor="end" fill="${colors.muted}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="12">Last 12 months</text>
-<text x="28" y="96" fill="${colors.muted}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11">Mon</text><text x="28" y="130" fill="${colors.muted}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11">Wed</text><text x="28" y="164" fill="${colors.muted}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="11">Fri</text>
-${rects}
-<text x="1110" y="210" fill="${colors.muted}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="10">Less</text>
-${Object.values(levelFill).map((col,i)=>`<rect x="${1150+i*22}" y="201" width="12" height="12" rx="2" fill="${col}"/>`).join('')}
-<text x="1270" y="210" fill="${colors.muted}" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-size="10">More</text>
+const weeks = contributions.contributionCalendar.weeks.slice(-53);
+const levelColor = {
+  NONE: C.grid0,
+  FIRST_QUARTILE: C.grid1,
+  SECOND_QUARTILE: C.grid2,
+  THIRD_QUARTILE: C.grid3,
+  FOURTH_QUARTILE: C.grid4
+};
+
+const cell = 10;
+const gap = 3;
+const gridX = 78;
+const gridY = 78;
+const headerMonths = [];
+let lastMonth = '';
+for (let wi = 0; wi < weeks.length; wi++) {
+  const day = weeks[wi]?.contributionDays?.find(Boolean);
+  if (!day) continue;
+  const month = day.date.slice(0, 7);
+  if (month !== lastMonth && wi > 0) {
+    headerMonths.push({ wi, month });
+    lastMonth = month;
+  }
+}
+
+let cells = '';
+weeks.forEach((week, wi) => {
+  (week.contributionDays || []).forEach((day) => {
+    const date = new Date(`${day.date}T00:00:00Z`);
+    const weekday = date.getUTCDay();
+    const x = gridX + wi * (cell + gap);
+    const y = gridY + weekday * (cell + gap);
+    cells += `<rect x="${x}" y="${y}" width="${cell}" height="${cell}" rx="2" fill="${levelColor[day.contributionLevel] || C.grid0}"><title>${esc(day.date)}: ${fmt(day.contributionCount)} contributions</title></rect>`;
+  });
+});
+
+const activitySvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 205" role="img" aria-labelledby="title desc">
+<title id="title">GitHub contribution activity for ${esc(OWNER)}</title>
+<desc id="desc">Real contribution calendar data from GitHub for the last 12 months.</desc>
+<rect x="1" y="1" width="918" height="203" rx="18" fill="${C.panel}" stroke="${C.border}"/>
+${text(24, 34, 'Contribution Activity', 16, C.text, 700)}
+${text(896, 34, `${fmt(contributions.contributionCalendar.totalContributions)} contributions`, 10, C.muted, 600, 'end')}
+${headerMonths.map(({ wi, month }) => text(gridX + wi * (cell + gap), 58, month.slice(0,4) === new Date().getUTCFullYear().toString() ? month.slice(5) : month, 9, C.muted, 500)).join('')}
+${text(24, 96, 'Sun', 9, C.muted, 500)}
+${text(24, 130, 'Tue', 9, C.muted, 500)}
+${text(24, 164, 'Thu', 9, C.muted, 500)}
+${cells}
+${text(748, 194, 'Less', 9, C.muted, 500)}
+${Object.values(levelColor).map((color, i) => `<rect x="778" y="185" width="10" height="10" rx="2" fill="${color}"/>`).join('')}
+${text(898, 194, 'More', 9, C.muted, 500, 'end')}
 </svg>`;
 
-await fs.writeFile(path.join(OUT,'stats.svg'), statsSvg);
-await fs.writeFile(path.join(OUT,'languages.svg'), languagesSvg);
-await fs.writeFile(path.join(OUT,'activity.svg'), activitySvg);
-console.log(`Generated stats for ${OWNER}: ${repos.length} repos, ${stars} stars, ${c.totalCommitContributions} commits, ${topLangs.length} languages.`);
+await fs.writeFile(path.join(OUT, 'stats.svg'), statsSvg);
+await fs.writeFile(path.join(OUT, 'languages.svg'), languagesSvg);
+await fs.writeFile(path.join(OUT, 'activity.svg'), activitySvg);
+console.log(`Generated live profile cards for ${OWNER}: ${publicRepos} repositories, ${stars} stars, ${contributions.contributionCalendar.totalContributions} contributions.`);

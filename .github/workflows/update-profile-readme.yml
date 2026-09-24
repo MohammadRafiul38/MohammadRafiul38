@@ -1,29 +1,37 @@
-name: Update profile stats
+name: Refresh profile stats
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [main]
   schedule:
     - cron: '17 3 * * 1'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  update:
+  refresh:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout profile repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Generate local stats
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate live profile cards
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_OWNER: MohammadRafiul38
         run: node scripts/generate-stats.mjs
 
-      - name: Commit updated stats
+      - name: Commit generated cards
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add assets/stats.svg assets/languages.svg assets/activity.svg
-          git diff --cached --quiet || git commit -m "chore: update profile stats"
+          git diff --cached --quiet || git commit -m 'chore: refresh profile stats [skip ci]'
           git push
